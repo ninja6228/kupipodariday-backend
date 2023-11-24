@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entity/users.entity';
@@ -73,11 +73,16 @@ export class WishlistsService {
     return this.wishlistRepository.save(wishlist);
   }
 
-  async deleteWishlist(id: number) {
+  async deleteWishlist(id: number, userId: number) {
     const wishlist = await this.wishlistRepository.findOne({
       relations: { owner: true },
       where: { id },
     });
+    if (wishlist.owner.id !== userId) {
+      throw new ForbiddenException(
+        'Вы не можете удалять чужие списки подарков',
+      );
+    }
     return await this.wishlistRepository.remove(wishlist);
   }
 }

@@ -102,17 +102,16 @@ export class WishesService {
     }
   }
 
-  async copyWish(id: number, userId: number) {
+  async copyWish(id: number, user: User) {
     const wish = await this.wisheRepository.findOneBy({ id });
-    const user = await this.userRepository.findOne({
-      relations: { wishes: true },
-      where: { id: userId },
+    const availabilityWish = await this.wisheRepository.findOne({
+      where: { owner: { id: user.id }, name: wish.name },
     });
-    const availability = user.wishes.some((item) => item.id === wish.id);
-    if (!availability) {
+    if (availabilityWish) {
+      throw new ConflictException('Нельзя добовить подарок повторно');
+    } else {
       wish.copied += 1;
       await this.wisheRepository.save(wish);
-
       const newWish = this.wisheRepository.create(wish);
       newWish.copied = 0;
       newWish.raised = 0;
